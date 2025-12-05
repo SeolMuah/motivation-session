@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Copy, ExternalLink, Sparkles } from 'lucide-react';
+import { Plus, Copy, ExternalLink, Sparkles, Lock, LogOut } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session } from '@/lib/types';
+
+// 관리자 인증 정보
+const ADMIN_ID = 'seolmuah';
+const ADMIN_PW = 'apgpfmqkqk1!';
 
 export default function Home() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -12,10 +16,22 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // 로그인 상태
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginId, setLoginId] = useState('');
+  const [loginPw, setLoginPw] = useState('');
+  const [loginError, setLoginError] = useState('');
+
   const supabase = getSupabase();
 
   useEffect(() => {
-    loadSessions();
+    // 로그인 상태 확인
+    const adminLoggedIn = localStorage.getItem('admin_logged_in');
+    if (adminLoggedIn === 'true') {
+      setIsLoggedIn(true);
+      loadSessions();
+    }
   }, []);
 
   const loadSessions = async () => {
@@ -27,6 +43,24 @@ export default function Home() {
     if (data) {
       setSessions(data);
     }
+  };
+
+  const handleLogin = () => {
+    if (loginId === ADMIN_ID && loginPw === ADMIN_PW) {
+      setIsLoggedIn(true);
+      localStorage.setItem('admin_logged_in', 'true');
+      setLoginError('');
+      loadSessions();
+    } else {
+      setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('admin_logged_in');
+    setLoginId('');
+    setLoginPw('');
   };
 
   const createSession = async () => {
@@ -71,6 +105,77 @@ export default function Home() {
     });
   };
 
+  // 로그인 화면
+  if (!isLoggedIn) {
+    return (
+      <main className="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card max-w-md w-full text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+            className="mb-6"
+          >
+            <Lock size={48} className="mx-auto text-[var(--primary)]" />
+          </motion.div>
+
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            <span className="gradient-text">관리자</span> 로그인
+          </h1>
+          <p className="text-[var(--muted)] mb-8">
+            세션을 관리하려면 로그인하세요
+          </p>
+
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+              placeholder="아이디"
+              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl py-3 px-4 focus:outline-none focus:border-[var(--primary)] transition-colors"
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+            <input
+              type="password"
+              value={loginPw}
+              onChange={(e) => setLoginPw(e.target.value)}
+              placeholder="비밀번호"
+              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl py-3 px-4 focus:outline-none focus:border-[var(--primary)] transition-colors"
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+
+            {loginError && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-red-400 text-sm"
+              >
+                {loginError}
+              </motion.p>
+            )}
+
+            <motion.button
+              onClick={handleLogin}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full btn-primary py-3"
+            >
+              로그인
+            </motion.button>
+          </div>
+
+          <p className="text-[var(--muted)] text-sm mt-8">
+            스파르타 내일배움캠프 데이터 분석 9기
+          </p>
+        </motion.div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-12">
@@ -80,6 +185,15 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--card)] hover:bg-[var(--card-hover)] transition-colors text-sm text-[var(--muted)]"
+            >
+              <LogOut size={16} />
+              로그아웃
+            </button>
+          </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             <span className="gradient-text">동기부여</span> 세션
           </h1>
