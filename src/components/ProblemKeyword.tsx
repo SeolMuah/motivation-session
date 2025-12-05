@@ -229,10 +229,15 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.1 }}
-                  className={`${getKeywordSize(item.count)} ${getKeywordColor(index)} font-bold cursor-default transition-transform`}
+                  className={`${getKeywordSize(item.count)} ${getKeywordColor(index)} font-bold cursor-default transition-transform relative`}
                   title={`${item.count}명`}
                 >
                   {item.keyword}
+                  {item.count > 1 && (
+                    <sup className="absolute -top-1 -right-3 text-xs bg-white/20 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                      {item.count}
+                    </sup>
+                  )}
                 </motion.span>
               ))}
             </div>
