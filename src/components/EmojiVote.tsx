@@ -76,6 +76,7 @@ export default function EmojiVote({ sessionId, isDisplay = false }: EmojiVotePro
       supabase.removeChannel(channel);
       if (pollInterval) clearInterval(pollInterval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
 
   const loadStats = async () => {

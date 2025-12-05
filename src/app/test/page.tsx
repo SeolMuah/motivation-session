@@ -6,7 +6,7 @@ import { getSupabase } from '@/lib/supabase/client';
 export default function TestPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<{ id: string; name: string; created_at: string }[]>([]);
   const supabase = getSupabase();
 
   useEffect(() => {
@@ -32,9 +32,9 @@ export default function TestPage() {
       setSessions(data || []);
       setStatus('success');
       setMessage(`연결 성공! ${data?.length || 0}개의 세션을 찾았습니다.`);
-    } catch (err: any) {
+    } catch (err) {
       setStatus('error');
-      setMessage(`연결 실패: ${err.message || JSON.stringify(err)}`);
+      setMessage(`연결 실패: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
     }
   };
 
@@ -57,8 +57,8 @@ export default function TestPage() {
 
       setMessage(`세션 생성 성공! ID: ${data.id}`);
       testConnection(); // 새로고침
-    } catch (err: any) {
-      setMessage(`세션 생성 실패: ${err.message || JSON.stringify(err)}`);
+    } catch (err) {
+      setMessage(`세션 생성 실패: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
     }
   };
 

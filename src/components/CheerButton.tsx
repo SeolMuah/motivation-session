@@ -50,6 +50,7 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
       supabase.removeChannel(channel);
       if (pollInterval) clearInterval(pollInterval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
 
   const loadCheerCount = async () => {

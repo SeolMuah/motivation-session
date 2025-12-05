@@ -86,6 +86,7 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
       supabase.removeChannel(messageChannel);
       if (pollInterval) clearInterval(pollInterval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
 
   const loadStats = async () => {
