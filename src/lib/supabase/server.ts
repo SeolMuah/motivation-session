@@ -15,14 +15,14 @@ export async function createClient() {
         set(name: string, value: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value, ...options });
-          } catch (error) {
+          } catch {
             // 서버 컴포넌트에서 쿠키 설정 시 무시
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
+          } catch {
             // 서버 컴포넌트에서 쿠키 삭제 시 무시
           }
         },

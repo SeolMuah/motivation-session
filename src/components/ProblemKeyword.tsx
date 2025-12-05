@@ -56,6 +56,7 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
       supabase.removeChannel(channel);
       if (pollInterval) clearInterval(pollInterval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
 
   const loadKeywords = async () => {

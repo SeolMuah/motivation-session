@@ -18,6 +18,7 @@ export default function Timer({
   duration = 60,
   onComplete,
   isDisplay = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   autoStart = false,
 }: TimerProps) {
   const [timeLeft, setTimeLeft] = useState(duration);
@@ -73,6 +74,7 @@ export default function Timer({
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   // 타이머 시작 시간이 변경되면 타이머 계산
