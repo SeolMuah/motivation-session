@@ -180,10 +180,6 @@ export default function Home() {
               로그인
             </motion.button>
           </div>
-
-          <p className="text-[var(--muted)] text-sm mt-8">
-            스파르타 내일배움캠프 데이터 분석 9기
-          </p>
         </motion.div>
       </main>
     );
