@@ -9,6 +9,7 @@ export default function TestPage() {
   const [sessions, setSessions] = useState<{ id: string; name: string; created_at: string }[]>([]);
   const supabase = getSupabase();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     testConnection();
   }, []);

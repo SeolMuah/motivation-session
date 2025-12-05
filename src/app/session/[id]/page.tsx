@@ -41,6 +41,7 @@ export default function SessionPage() {
   const [hasEnteredSession, setHasEnteredSession] = useState(false);
   const supabase = getSupabase();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadSession();
     // 이전에 저장된 정보가 있는지 확인

@@ -19,6 +19,7 @@ export default function RecapPage() {
   const [isLoading, setIsLoading] = useState(true);
   const supabase = getSupabase();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadAllData();
   }, [sessionId]);
@@ -114,6 +115,7 @@ export default function RecapPage() {
   }));
 
   const conflictYes = conflictVotes.filter((v) => v.has_conflict).length;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const conflictNo = conflictVotes.filter((v) => !v.has_conflict).length;
 
   return (
