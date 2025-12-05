@@ -6,10 +6,6 @@ import { Plus, Copy, ExternalLink, Sparkles, Lock, LogOut } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session } from '@/lib/types';
 
-// 관리자 인증 정보
-const ADMIN_ID = 'seolmuah';
-const ADMIN_PW = 'apgpfmqkqk1!';
-
 export default function Home() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [newSessionName, setNewSessionName] = useState('');
@@ -45,14 +41,31 @@ export default function Home() {
     }
   };
 
-  const handleLogin = () => {
-    if (loginId === ADMIN_ID && loginPw === ADMIN_PW) {
+  const handleLogin = async () => {
+    if (!loginId.trim() || !loginPw.trim()) {
+      setLoginError('아이디와 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('username', loginId)
+        .eq('password_hash', loginPw)
+        .single();
+
+      if (error || !data) {
+        setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.');
+        return;
+      }
+
       setIsLoggedIn(true);
       localStorage.setItem('admin_logged_in', 'true');
       setLoginError('');
       loadSessions();
-    } else {
-      setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.');
+    } catch {
+      setLoginError('로그인 중 오류가 발생했습니다.');
     }
   };
 
