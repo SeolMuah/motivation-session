@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 
@@ -24,24 +24,51 @@ export default function Timer({
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isRunning, setIsRunning] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(!isDisplay); // 학생은 음소거 기본, 진행자는 소리 기본
   const [timerStartedAt, setTimerStartedAt] = useState<string | null>(null);
+  const [userInteracted, setUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const supabase = getSupabase();
 
   useEffect(() => {
     // 오디오 요소 생성
     audioRef.current = new Audio('/audio/timer-bgm.mp3');
-    audioRef.current.loop = true;
+    audioRef.current.loop = false; // 타이머 종료 후에도 음악이 끝까지 재생되도록 loop 비활성화
     audioRef.current.volume = 0.25;
+
+    // 사용자 상호작용 감지 (클릭, 터치, 키보드)
+    const handleUserInteraction = () => {
+      if (!userInteracted) {
+        setUserInteracted(true);
+        // 소리 없이 재생 시도하여 오디오 컨텍스트 활성화
+        if (audioRef.current) {
+          audioRef.current.volume = 0;
+          audioRef.current.play().then(() => {
+            audioRef.current?.pause();
+            if (audioRef.current) {
+              audioRef.current.volume = 0.25;
+              audioRef.current.currentTime = 0;
+            }
+          }).catch(() => {});
+        }
+      }
+    };
+
+    // 다양한 이벤트에서 상호작용 감지
+    document.addEventListener('click', handleUserInteraction, { once: true });
+    document.addEventListener('touchstart', handleUserInteraction, { once: true });
+    document.addEventListener('keydown', handleUserInteraction, { once: true });
 
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
     };
-  }, []);
+  }, [userInteracted]);
 
   // 타이머 상태 동기화
   useEffect(() => {
@@ -121,8 +148,8 @@ export default function Timer({
     let interval: NodeJS.Timeout;
 
     if (isRunning && timeLeft > 0) {
-      // BGM 재생
-      if (audioRef.current && !isMuted) {
+      // BGM 재생 - 사용자가 상호작용을 했고 음소거가 아닌 경우에만
+      if (audioRef.current && userInteracted && !isMuted) {
         audioRef.current.play().catch(() => {
           // 자동 재생 차단된 경우 무시
         });
@@ -133,32 +160,20 @@ export default function Timer({
           if (prev <= 1) {
             setIsRunning(false);
             setIsComplete(true);
-            if (audioRef.current) {
-              // 페이드아웃
-              const fadeOut = setInterval(() => {
-                if (audioRef.current && audioRef.current.volume > 0.1) {
-                  audioRef.current.volume -= 0.1;
-                } else {
-                  if (audioRef.current) {
-                    audioRef.current.pause();
-                    audioRef.current.volume = 0.25;
-                  }
-                  clearInterval(fadeOut);
-                }
-              }, 100);
-            }
+            // 타이머가 끝나도 배경음은 끝까지 재생 (페이드아웃/정지하지 않음)
             onComplete?.();
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
-    } else if (!isRunning && audioRef.current) {
+    } else if (!isRunning && !isComplete && audioRef.current) {
+      // 타이머가 완료된 경우(isComplete)에는 음악을 멈추지 않음
       audioRef.current.pause();
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isMuted, onComplete]);
+  }, [isRunning, timeLeft, isMuted, userInteracted, onComplete]);
 
   const startTimer = async () => {
     // 진행자만 시작 가능
@@ -197,6 +212,10 @@ export default function Timer({
     setIsMuted(!isMuted);
     if (audioRef.current) {
       audioRef.current.muted = !isMuted;
+      // 음소거 해제 시 재생 시도
+      if (isMuted && isRunning && userInteracted) {
+        audioRef.current.play().catch(() => {});
+      }
     }
   };
 
@@ -247,17 +266,9 @@ export default function Timer({
 
         {/* 시간 표시 */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={timeLeft}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="text-5xl md:text-7xl font-bold gradient-text"
-            >
-              {formatTime(timeLeft)}
-            </motion.span>
-          </AnimatePresence>
+          <span className="text-5xl md:text-7xl font-bold gradient-text">
+            {formatTime(timeLeft)}
+          </span>
           <span className="text-[var(--muted)] mt-2">
             {isComplete ? '완료!' : isRunning ? '진행 중...' : '준비'}
           </span>

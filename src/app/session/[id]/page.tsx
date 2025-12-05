@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Sparkles, User, Users, ChevronDown } from 'lucide-react';
+import { Sparkles, User, Users, ChevronDown } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session, SessionStep } from '@/lib/types';
 
@@ -20,7 +20,7 @@ const STEPS: { id: SessionStep; title: string; subtitle: string }[] = [
   { id: 'reset', title: '리셋 타임', subtitle: '1분간 눈을 감고 생각해보세요' },
   { id: 'first-me', title: '처음의 나에게', subtitle: '한마디를 남겨보세요' },
   { id: 'conflict', title: '협업 이야기', subtitle: '갈등을 경험해본 적 있나요?' },
-  { id: 'why', title: '다시, 왜?', subtitle: '우리가 풀고 있는 문제는?' },
+  { id: 'why', title: '나의 고민, 나의 서사', subtitle: '우리들의 고민은?' },
   { id: 'proud', title: '뿌듯할 순간', subtitle: '프로젝트 후 가장 뿌듯할 순간은?' },
   { id: 'cheer', title: '화이팅!', subtitle: '함께 응원해요' },
 ];
@@ -41,7 +41,6 @@ export default function SessionPage() {
   const [hasEnteredSession, setHasEnteredSession] = useState(false);
   const supabase = getSupabase();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadSession();
     // 이전에 저장된 정보가 있는지 확인
@@ -52,6 +51,16 @@ export default function SessionPage() {
       setTeamNumber(parseInt(savedTeam));
       setHasEnteredSession(true);
     }
+
+    // Polling으로 세션 상태 동기화 (3초마다)
+    const pollInterval = setInterval(() => {
+      loadSession();
+    }, 3000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const loadSession = async () => {
@@ -63,6 +72,10 @@ export default function SessionPage() {
 
     if (data) {
       setSession(data);
+      // 세션에 저장된 현재 단계가 있으면 복원
+      if (data.current_step !== undefined && data.current_step !== null) {
+        setCurrentStep(data.current_step);
+      }
     }
     setIsLoading(false);
   };
@@ -99,17 +112,6 @@ export default function SessionPage() {
     setHasEnteredSession(true);
   };
 
-  const nextStep = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -253,12 +255,11 @@ export default function SessionPage() {
               </p>
             </div>
 
-            {/* 단계 인디케이터 */}
+            {/* 단계 인디케이터 (진행자 동기화) */}
             <div className="flex gap-1">
               {STEPS.map((_, index) => (
-                <button
+                <div
                   key={index}
-                  onClick={() => setCurrentStep(index)}
                   className={`w-3 h-3 rounded-full transition-colors ${
                     index === currentStep
                       ? 'bg-[var(--primary)]'
@@ -294,11 +295,13 @@ export default function SessionPage() {
                 <motion.h2
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-2xl md:text-3xl font-bold text-center mb-8"
+                  className="text-2xl md:text-4xl font-bold text-center mb-12 leading-relaxed"
                 >
-                  처음 이 여정을 시작했을 때를 떠올려보세요
+                  잠시 눈을 감고,<br />
+                  처음 이 여정을 시작했을 때를<br />
+                  떠올려보세요...
                 </motion.h2>
-                <Timer sessionId={sessionId} duration={60} onComplete={nextStep} />
+                <Timer sessionId={sessionId} duration={60} />
               </div>
             )}
 
@@ -322,6 +325,7 @@ export default function SessionPage() {
                   sessionId={sessionId}
                   table="first_me_messages"
                   title="모두의 메시지"
+                  myTeamNumber={teamNumber as number}
                 />
               </div>
             )}
@@ -355,6 +359,7 @@ export default function SessionPage() {
                   sessionId={sessionId}
                   table="proud_moments"
                   title="뿌듯할 순간들"
+                  myTeamNumber={teamNumber as number}
                 />
               </div>
             )}
@@ -366,30 +371,12 @@ export default function SessionPage() {
         </AnimatePresence>
       </div>
 
-      {/* 네비게이션 버튼 */}
+      {/* 현재 단계 표시 (진행자가 제어) */}
       <div className="fixed bottom-0 left-0 right-0 p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--card)] hover:bg-[var(--card-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft size={20} />
-            이전
-          </button>
-
-          <span className="text-[var(--muted)]">
-            {currentStep + 1} / {STEPS.length}
+        <div className="container mx-auto flex justify-center items-center">
+          <span className="text-[var(--muted)] bg-[var(--card)] px-4 py-2 rounded-xl">
+            {currentStep + 1} / {STEPS.length} 단계 · 진행자가 화면을 전환합니다
           </span>
-
-          <button
-            onClick={nextStep}
-            disabled={currentStep === STEPS.length - 1}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            다음
-            <ChevronRight size={20} />
-          </button>
         </div>
       </div>
     </main>

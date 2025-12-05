@@ -60,8 +60,13 @@ export default function Home() {
         return;
       }
 
+      // 세션 토큰 생성 (admin ID + 타임스탬프 해시)
+      const sessionToken = btoa(`${data.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
       setIsLoggedIn(true);
       localStorage.setItem('admin_logged_in', 'true');
+      localStorage.setItem('admin_token', sessionToken);
+      localStorage.setItem('admin_id', data.id);
       setLoginError('');
       loadSessions();
     } catch {
@@ -72,6 +77,8 @@ export default function Home() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('admin_logged_in');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_id');
     setLoginId('');
     setLoginPw('');
   };

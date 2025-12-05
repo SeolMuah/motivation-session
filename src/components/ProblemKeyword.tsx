@@ -28,33 +28,13 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
     loadKeywords();
     checkIfSubmitted();
 
-    const channel = supabase
-      .channel(`problem_keywords_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'problem_keywords',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          loadKeywords();
-        }
-      )
-      .subscribe();
-
-    // 진행자 페이지에서는 추가로 polling (2초마다)
-    let pollInterval: NodeJS.Timeout | null = null;
-    if (isDisplay) {
-      pollInterval = setInterval(() => {
-        loadKeywords();
-      }, 2000);
-    }
+    // Polling: 진행자 2초, 학생 3초
+    const pollInterval = setInterval(() => {
+      loadKeywords();
+    }, isDisplay ? 2000 : 3000);
 
     return () => {
-      supabase.removeChannel(channel);
-      if (pollInterval) clearInterval(pollInterval);
+      clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
@@ -162,13 +142,13 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
           💡
         </motion.div>
         <h2 className="text-2xl md:text-3xl font-bold mb-2">
-          이번 프로젝트에서 해결하고 싶은
+          최종 프로젝트에서 발생한
         </h2>
         <p className="text-2xl md:text-3xl font-bold gradient-text">
-          &lsquo;문제&rsquo; 키워드 하나만 적어주세요
+          나의 고민을 하나만 적어주세요
         </p>
         <p className="text-[var(--muted)] mt-4">
-          예: 갈등, 데이터 정제, 시각화, 협업, 일정 관리...
+          예: 기술 활용, 역할 분담, 의견 충돌, 시간 부족,  방향성...
         </p>
       </motion.div>
 
@@ -239,7 +219,7 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
             className="card"
           >
             <h3 className="text-lg font-semibold text-center mb-6 text-[var(--muted)]">
-              우리가 풀고 있는 문제들
+              우리들의 고민들
             </h3>
             <div className="flex flex-wrap justify-center gap-4 min-h-[150px]">
               {keywords.map((item, index) => (
@@ -277,8 +257,8 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 }}
             >
-              <p className="text-xl md:text-2xl font-semibold mb-4">
-                결국 우리가 하는 모든 것은
+              <p className="text-xl md:text-2xl font-semibold mb-3">
+                우리들의 고민들은 문제가 아니라
               </p>
               <motion.p
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -286,26 +266,15 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
                 transition={{ delay: 1.4 }}
                 className="text-2xl md:text-3xl font-bold gradient-text mb-6"
               >
-                &ldquo;문제 해결&rdquo;로 연결됩니다
+                나의 서사를 쌓는 중요한 시간입니다
               </motion.p>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.8 }}
-                className="text-[var(--muted)] space-y-2"
-              >
-                <p>이번 프로젝트는 결과물이 아니라</p>
-                <p className="text-lg text-[var(--accent)] font-semibold">
-                  나의 문제해결 서사를 쌓는 시간이에요
-                </p>
-              </motion.div>
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.2 }}
-                className="mt-6 text-xl md:text-2xl font-bold text-white"
+                transition={{ delay: 1.8 }}
+                className="text-xl md:text-2xl font-bold text-white"
               >
-                이 경험이 나를 채용하는 근거가 됩니다
+                이 경험이 &apos;왜 당신을 뽑아야 하나요?&apos;에 대한 근거이자 답입니다
               </motion.p>
             </motion.div>
 

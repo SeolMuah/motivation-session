@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { getSupabase } from '@/lib/supabase/client';
@@ -10,59 +10,14 @@ interface CheerButtonProps {
   isDisplay?: boolean;
 }
 
-export default function CheerButton({ sessionId, isDisplay = false }: CheerButtonProps) {
+export default function CheerButton({
+  sessionId,
+  isDisplay = false,
+}: CheerButtonProps) {
   const [cheerCount, setCheerCount] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const prevCountRef = useRef(0);
   const supabase = getSupabase();
-
-  useEffect(() => {
-    loadCheerCount();
-
-    // Realtime 구독
-    const channel = supabase
-      .channel(`cheers_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cheers',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          loadCheerCount();
-          if (isDisplay) {
-            fireConfetti();
-          }
-        }
-      )
-      .subscribe();
-
-    // 진행자 페이지에서는 추가로 polling (2초마다)
-    let pollInterval: NodeJS.Timeout | null = null;
-    if (isDisplay) {
-      pollInterval = setInterval(() => {
-        loadCheerCount();
-      }, 2000);
-    }
-
-    return () => {
-      supabase.removeChannel(channel);
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isDisplay]);
-
-  const loadCheerCount = async () => {
-    const { count } = await supabase
-      .from('cheers')
-      .select('*', { count: 'exact', head: true })
-      .eq('session_id', sessionId);
-
-    if (count !== null) {
-      setCheerCount(count);
-    }
-  };
 
   const fireConfetti = useCallback(() => {
     const colors = ['#6366F1', '#F59E0B', '#EC4899', '#10B981', '#F43F5E'];
@@ -74,7 +29,6 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
       colors,
     });
 
-    // 양쪽에서도 발사
     confetti({
       particleCount: 50,
       angle: 60,
@@ -90,6 +44,35 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
       colors,
     });
   }, []);
+
+  const loadCheerCount = useCallback(async () => {
+    const { count } = await supabase
+      .from('cheers')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', sessionId);
+
+    if (count !== null) {
+      // 진행자 페이지에서 새 cheer가 추가되면 confetti 발사
+      if (isDisplay && count > prevCountRef.current && prevCountRef.current > 0) {
+        fireConfetti();
+      }
+      prevCountRef.current = count;
+      setCheerCount(count);
+    }
+  }, [supabase, sessionId, isDisplay, fireConfetti]);
+
+  useEffect(() => {
+    loadCheerCount();
+
+    // Polling: 진행자 2초, 학생 3초
+    const pollInterval = setInterval(() => {
+      loadCheerCount();
+    }, isDisplay ? 2000 : 3000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [sessionId, isDisplay, loadCheerCount]);
 
   const handleCheer = async () => {
     if (isAnimating || isDisplay) return;
@@ -110,14 +93,14 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
       {/* 제목 */}
       <motion.h2
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-2xl md:text-3xl font-bold text-center mb-4"
       >
-        함께 화이팅! 🔥
+        최종 프로젝트 함께 화이팅! 🔥
       </motion.h2>
 
       {/* 카운터 */}
@@ -125,7 +108,7 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
         key={cheerCount}
         initial={{ scale: 1 }}
         animate={{ scale: [1, 1.2, 1] }}
-        className="text-6xl md:text-8xl font-bold gradient-text mb-8"
+        className="text-6xl md:text-8xl font-bold gradient-text mb-6"
       >
         {cheerCount}
       </motion.div>
@@ -139,8 +122,8 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
           disabled={isAnimating}
           className={`
             relative overflow-hidden
-            text-4xl md:text-6xl
-            px-12 py-8 md:px-16 md:py-10
+            text-3xl md:text-5xl
+            px-10 py-6 md:px-14 md:py-8
             rounded-3xl
             bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]
             shadow-lg shadow-[var(--primary)]/30
@@ -161,11 +144,11 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
 
       {/* 진행자용 표시 */}
       {isDisplay && (
-        <div className="text-center">
+        <div className="text-center mb-6">
           <p className="text-xl text-[var(--muted)]">
             화이팅 버튼을 눌러주세요!
           </p>
-          <div className="flex justify-center gap-4 mt-6">
+          <div className="flex justify-center gap-4 mt-4">
             {['💪', '🔥', '⭐', '✨', '🎉'].map((emoji, i) => (
               <motion.span
                 key={i}
@@ -192,9 +175,9 @@ export default function CheerButton({ sessionId, isDisplay = false }: CheerButto
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="text-center text-[var(--muted)] mt-8 text-lg"
+        className="text-center text-[var(--muted)] mt-6 text-lg"
       >
-        데이터는 쌓일수록 의미가 생깁니다. 여러분의 시간도 마찬가지예요
+        데이터가 쌓일수록 의미가 발견되었지요? 여러분의 시간도 마찬가지예요
       </motion.p>
     </div>
   );

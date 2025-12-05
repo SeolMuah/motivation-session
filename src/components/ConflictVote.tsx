@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send } from 'lucide-react';
+import { Send, Users, ChevronDown } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 
 interface ConflictVoteProps {
@@ -17,19 +17,74 @@ interface TeamMessage {
   session_id: string;
   message: string;
   nickname: string;
+  team_number?: number;
   created_at: string;
 }
+
+const PASTEL_COLORS = [
+  'pastel-pink',
+  'pastel-blue',
+  'pastel-green',
+  'pastel-yellow',
+  'pastel-purple',
+  'pastel-orange',
+];
+
+const DECORATIONS = ['✨', '💫', '🌟', '💕', '🎈', '🌸', '🍀', '⭐'];
 
 export default function ConflictVote({ sessionId, isDisplay = false, nickname = '', teamNumber }: ConflictVoteProps) {
   const [hasVoted, setHasVoted] = useState(false);
   const [yesCount, setYesCount] = useState(0);
   const [noCount, setNoCount] = useState(0);
-  const [showMessage, setShowMessage] = useState(false);
+  const [showMessage, setShowMessage] = useState(isDisplay); // 진행자는 항상 메시지 섹션 표시
   const [teamMessage, setTeamMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [messages, setMessages] = useState<TeamMessage[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<number | 'all'>('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const supabase = getSupabase();
+
+  // 내 조의 메시지 개수
+  const myTeamMessageCount = useMemo(() => {
+    if (!teamNumber) return 0;
+    return messages.filter((msg) => msg.team_number === teamNumber).length;
+  }, [messages, teamNumber]);
+
+  // 모든 조 목록 추출 (진행자용)
+  const allTeams = useMemo(() => {
+    const teams = new Set<number>();
+    messages.forEach((msg) => {
+      if (msg.team_number) {
+        teams.add(msg.team_number);
+      }
+    });
+    return Array.from(teams).sort((a, b) => a - b);
+  }, [messages]);
+
+  // 조별 메시지 개수 (진행자용)
+  const teamMessageCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    messages.forEach((msg) => {
+      if (msg.team_number) {
+        counts[msg.team_number] = (counts[msg.team_number] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [messages]);
+
+  // 선택된 조의 메시지
+  const filteredMessages = useMemo(() => {
+    if (selectedTeam === 'all') {
+      return messages;
+    }
+    return messages.filter((msg) => msg.team_number === selectedTeam);
+  }, [selectedTeam, messages]);
+
+  // 스타일 헬퍼 함수
+  const getRotation = (index: number) => ((index * 7) % 10) - 5;
+  const getColor = (index: number) => PASTEL_COLORS[index % PASTEL_COLORS.length];
+  const getDecoration = (index: number) => DECORATIONS[index % DECORATIONS.length];
 
   const totalVotes = yesCount + noCount;
   const yesPercentage = totalVotes > 0 ? Math.round((yesCount / totalVotes) * 100) : 0;
@@ -40,51 +95,14 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
     checkIfVoted();
     checkIfSubmittedMessage();
 
-    const channel = supabase
-      .channel(`conflict_votes_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conflict_votes',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          loadStats();
-        }
-      )
-      .subscribe();
-
-    const messageChannel = supabase
-      .channel(`team_messages_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'team_messages',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          loadMessages();
-        }
-      )
-      .subscribe();
-
-    // 진행자 페이지에서는 추가로 polling (2초마다)
-    let pollInterval: NodeJS.Timeout | null = null;
-    if (isDisplay) {
-      pollInterval = setInterval(() => {
-        loadStats();
-        loadMessages();
-      }, 2000);
-    }
+    // Polling: 진행자 2초, 학생 3초
+    const pollInterval = setInterval(() => {
+      loadStats();
+      loadMessages();
+    }, isDisplay ? 2000 : 3000);
 
     return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(messageChannel);
-      if (pollInterval) clearInterval(pollInterval);
+      clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
@@ -130,7 +148,7 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
 
   const handleSubmitMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamMessage.trim() || !nickname || isSubmitting || hasSubmittedMessage || isDisplay) return;
+    if (!teamMessage.trim() || !nickname || isSubmitting || isDisplay) return;
 
     setIsSubmitting(true);
 
@@ -143,8 +161,6 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
       });
 
       if (!error) {
-        setHasSubmittedMessage(true);
-        localStorage.setItem(`submitted_team_message_${sessionId}`, 'true');
         setTeamMessage('');
         await loadMessages();
       }
@@ -293,12 +309,12 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
             >
               <span className="text-4xl mb-2 block">💌</span>
               <h3 className="text-xl md:text-2xl font-bold gradient-text">
-                함께하는 소중한 팀원에게 전하는 따뜻한 한마디
+                함께하는 소중한 팀원들에게 전하는 따뜻한 한마디
               </h3>
             </motion.div>
 
-            {/* 입력 폼 - 학생용 */}
-            {!hasSubmittedMessage && !isDisplay && nickname && (
+            {/* 입력 폼 - 학생용 (여러 번 전송 가능) */}
+            {!isDisplay && nickname && (
               <motion.form
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -330,42 +346,194 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
               </motion.form>
             )}
 
-            {/* 제출 완료 메시지 */}
-            {hasSubmittedMessage && !isDisplay && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="card text-center py-4 mb-6"
-              >
-                <span className="text-3xl mb-2 block">💕</span>
-                <p className="font-semibold">따뜻한 메시지가 전달되었어요!</p>
-              </motion.div>
-            )}
-
             {/* 메시지 목록 */}
             {messages.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="space-y-3"
+                className="space-y-4"
               >
-                <p className="text-center text-[var(--muted)] text-sm mb-4">
-                  총 <span className="text-[var(--accent)] font-bold">{messages.length}</span>개의 메시지
-                </p>
-                <div className="grid gap-3 max-h-[400px] overflow-y-auto">
-                  {messages.map((msg, index) => (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="card bg-gradient-to-br from-[var(--card)] to-[var(--card-hover)] p-4"
+                {/* 진행자용 커스텀 드롭다운 필터 */}
+                {isDisplay && (
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      {/* 드롭다운 버튼 - 학생 페이지 탭 스타일 */}
+                      <button
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white shadow-lg cursor-pointer"
+                      >
+                        <Users size={16} />
+                        <span>
+                          {selectedTeam === 'all' ? `전체 (${messages.length})` : `${selectedTeam}조 (${teamMessageCounts[selectedTeam] || 0})`}
+                        </span>
+                        <ChevronDown size={14} />
+                      </button>
+
+                      {/* 커스텀 드롭다운 메뉴 */}
+                      <AnimatePresence>
+                        {isDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 mt-1 min-w-[160px] bg-[var(--background)] rounded-2xl shadow-lg border border-[var(--border)] overflow-hidden z-50"
+                          >
+                            <div className="max-h-64 overflow-y-auto py-2">
+                              {/* 전체 옵션 */}
+                              <button
+                                onClick={() => {
+                                  setSelectedTeam('all');
+                                  setIsDropdownOpen(false);
+                                }}
+                                className={`w-full px-4 py-3 text-left flex items-center justify-between hover:bg-[var(--card-hover)] transition-colors ${
+                                  selectedTeam === 'all' ? 'bg-[var(--primary)]/10' : ''
+                                }`}
+                              >
+                                <span className={`font-medium ${selectedTeam === 'all' ? 'text-[var(--primary)]' : 'text-[var(--foreground)]'}`}>
+                                  전체
+                                </span>
+                                <span className={`text-sm ${selectedTeam === 'all' ? 'text-[var(--primary)]' : 'text-[var(--muted)]'}`}>
+                                  {messages.length}명
+                                </span>
+                              </button>
+
+                              {/* 구분선 */}
+                              {allTeams.length > 0 && (
+                                <div className="my-1 mx-3 border-t border-[var(--border)]" />
+                              )}
+
+                              {/* 조별 옵션 */}
+                              {allTeams.map((team) => (
+                                <button
+                                  key={team}
+                                  onClick={() => {
+                                    setSelectedTeam(team);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-4 py-3 text-left flex items-center justify-between hover:bg-[var(--card-hover)] transition-colors ${
+                                    selectedTeam === team ? 'bg-[var(--primary)]/10' : ''
+                                  }`}
+                                >
+                                  <span className={`font-medium ${selectedTeam === team ? 'text-[var(--primary)]' : 'text-[var(--foreground)]'}`}>
+                                    {team}조
+                                  </span>
+                                  <span className={`text-sm ${selectedTeam === team ? 'text-[var(--primary)]' : 'text-[var(--muted)]'}`}>
+                                    {teamMessageCounts[team] || 0}명
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* 드롭다운 외부 클릭시 닫기 */}
+                      {isDropdownOpen && (
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setIsDropdownOpen(false)}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 참가자용 탭 필터 - 전체와 내 조만 표시 */}
+                {!isDisplay && teamNumber && (
+                  <div className="flex justify-center gap-2 mb-4">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedTeam('all')}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+                        selectedTeam === 'all'
+                          ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white shadow-lg'
+                          : 'bg-[var(--card)] text-[var(--muted)] hover:bg-[var(--card-hover)]'
+                      }`}
                     >
-                      <p className="text-base mb-2">&ldquo;{msg.message}&rdquo;</p>
-                      <p className="text-sm text-[var(--muted)] text-right">- {msg.nickname}</p>
-                    </motion.div>
-                  ))}
+                      <Users size={14} />
+                      전체 ({messages.length})
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedTeam(teamNumber)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        selectedTeam === teamNumber
+                          ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white shadow-lg'
+                          : 'bg-[var(--card)] text-[var(--muted)] hover:bg-[var(--card-hover)]'
+                      }`}
+                    >
+                      우리 조 ({myTeamMessageCount})
+                    </motion.button>
+                  </div>
+                )}
+
+                {/* 포스트잇 스타일 메시지 그리드 */}
+                <div className="w-full rounded-2xl bg-[var(--card)] p-4 md:p-6">
+                  <div className={`grid gap-3 md:gap-4 ${
+                    isDisplay
+                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                      : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+                  }`}>
+                    <AnimatePresence mode="popLayout">
+                      {filteredMessages.map((msg, index) => (
+                        <motion.div
+                          key={msg.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                          animate={{
+                            opacity: 1,
+                            scale: 1,
+                            y: 0,
+                            rotate: getRotation(index),
+                          }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 300,
+                            damping: 25,
+                            delay: Math.min(index * 0.03, 0.3),
+                          }}
+                          whileHover={{
+                            scale: 1.05,
+                            rotate: 0,
+                            zIndex: 10,
+                            transition: { duration: 0.2 },
+                          }}
+                          className={`relative ${getColor(index)} rounded-2xl shadow-md cursor-pointer break-inside-avoid ${
+                            isDisplay ? 'p-5 md:p-6' : 'p-4'
+                          }`}
+                        >
+                          {/* 장식 */}
+                          <span className={`absolute -top-2 -right-2 drop-shadow-sm ${isDisplay ? 'text-xl' : 'text-lg'}`}>
+                            {getDecoration(index)}
+                          </span>
+
+                          {/* 조 표시 배지 */}
+                          {msg.team_number && (
+                            <span className={`absolute -top-2 -left-2 bg-white/80 font-bold rounded-full shadow-sm ${
+                              isDisplay ? 'text-sm px-2.5 py-1' : 'text-xs px-2 py-0.5'
+                            }`}>
+                              {msg.team_number}조
+                            </span>
+                          )}
+
+                          {/* 메시지 */}
+                          <p className={`font-medium leading-relaxed mt-1 ${
+                            isDisplay ? 'text-base md:text-lg' : 'text-sm'
+                          }`}>{msg.message}</p>
+
+                          {/* 닉네임 */}
+                          <p className={`opacity-60 font-medium ${
+                            isDisplay ? 'text-sm mt-4' : 'text-xs mt-3'
+                          }`}>- {msg.nickname}</p>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </motion.div>
             )}

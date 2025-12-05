@@ -24,6 +24,7 @@ export interface FirstMeMessage {
   nickname: string;
   message: string;
   is_highlighted: boolean;
+  team_number?: number;
   created_at: string;
 }
 
@@ -40,6 +41,7 @@ export interface ProudMoment {
   nickname: string;
   message: string;
   hearts: number;
+  team_number?: number;
   created_at: string;
 }
 
@@ -53,6 +55,15 @@ export interface ProblemKeyword {
   id: string;
   session_id: string;
   keyword: string;
+  created_at: string;
+}
+
+export interface TeamMessage {
+  id: string;
+  session_id: string;
+  nickname: string;
+  message: string;
+  team_number?: number;
   created_at: string;
 }
 

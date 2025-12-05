@@ -37,7 +37,7 @@ export default function EmojiVote({ sessionId, isDisplay = false }: EmojiVotePro
   const voterIdRef = useRef<string | null>(null);
   const supabase = getSupabase();
 
-  // 초기 데이터 로드 및 실시간 구독
+  // 초기 데이터 로드 및 Polling
   useEffect(() => {
     // 클라이언트에서만 voter_id 생성
     if (!isDisplay) {
@@ -47,34 +47,13 @@ export default function EmojiVote({ sessionId, isDisplay = false }: EmojiVotePro
     loadStats();
     loadMyVote();
 
-    // Realtime 구독 - 모든 변경 이벤트
-    const channel = supabase
-      .channel(`condition_votes_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'condition_votes',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          loadStats();
-        }
-      )
-      .subscribe();
-
-    // 진행자 페이지에서는 추가로 polling (2초마다)
-    let pollInterval: NodeJS.Timeout | null = null;
-    if (isDisplay) {
-      pollInterval = setInterval(() => {
-        loadStats();
-      }, 2000);
-    }
+    // Polling: 진행자 2초, 학생 3초
+    const pollInterval = setInterval(() => {
+      loadStats();
+    }, isDisplay ? 2000 : 3000);
 
     return () => {
-      supabase.removeChannel(channel);
-      if (pollInterval) clearInterval(pollInterval);
+      clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isDisplay]);
