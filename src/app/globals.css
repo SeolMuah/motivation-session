@@ -2,26 +2,694 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== 🎨 아기자기 + 현대적 디자인 시스템 ===== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 메인 배경 - 부드러운 다크 퍼플 */
+  --background: #0c0a1d;
+  --background-soft: #13102a;
+  --foreground: #F8FAFC;
+
+  /* 프라이머리 - 보라+인디고 */
+  --primary: #8B5CF6;
+  --primary-light: #A78BFA;
+  --primary-dark: #7C3AED;
+  --primary-hover: #7C3AED;
+
+  /* 악센트 - 따뜻한 코랄/오렌지 */
+  --accent: #FB923C;
+  --accent-light: #FDBA74;
+  --accent-pink: #F472B6;
+
+  /* 카드 & 서피스 */
+  --card: rgba(30, 27, 60, 0.7);
+  --card-solid: #1e1b3c;
+  --card-hover: rgba(45, 40, 85, 0.8);
+  --border: rgba(139, 92, 246, 0.2);
+  --border-light: rgba(255, 255, 255, 0.1);
+
+  /* 텍스트 */
+  --muted: #A5B4FC;
+  --muted-foreground: #818CF8;
+
+  /* 상태 색상 */
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
+
+/* ✨ 배경 그라데이션 오버레이 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse at top left, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(251, 146, 60, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at center, rgba(244, 114, 182, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ===== 🖱️ 귀여운 스크롤바 ===== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-soft);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--primary) 0%, var(--accent-pink) 100%);
+  border-radius: 10px;
+  border: 2px solid var(--background-soft);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--primary-light) 0%, var(--accent) 100%);
+}
+
+/* ===== 🎬 애니메이션 ===== */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(-1deg);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-15px) scale(1.02);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4),
+                0 0 40px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(139, 92, 246, 0.6),
+                0 0 70px rgba(139, 92, 246, 0.3),
+                0 0 100px rgba(244, 114, 182, 0.2);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+@keyframes rainbow-border {
+  0% { border-color: #8B5CF6; }
+  25% { border-color: #F472B6; }
+  50% { border-color: #FB923C; }
+  75% { border-color: #34D399; }
+  100% { border-color: #8B5CF6; }
+}
+
+/* 애니메이션 클래스 */
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 0.6s ease-in-out; }
+.animate-bounce-soft { animation: bounce-soft 1s ease-in-out infinite; }
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-slide-up { animation: slide-up 0.6s ease-out forwards; }
+.animate-slide-in-right { animation: slide-in-right 0.5s ease-out forwards; }
+.animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+.animate-bounce-in { animation: bounce-in 0.6s ease-out forwards; }
+
+/* ===== 🌈 그라데이션 ===== */
+
+.gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--background) 0%,
+    var(--background-soft) 50%,
+    var(--background) 100%
+  );
+}
+
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--primary-light) 0%,
+    var(--accent-pink) 50%,
+    var(--accent) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-border {
+  position: relative;
+  background: var(--card);
+  border-radius: 24px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent-pink) 50%, var(--accent) 100%);
+  z-index: -1;
+  opacity: 0.6;
+}
+
+/* ===== 🔮 글래스모피즘 ===== */
+
+.glass {
+  background: rgba(30, 27, 60, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 📦 카드 스타일 ===== */
+
+.card {
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+}
+
+.card:hover {
+  background: var(--card-hover);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(139, 92, 246, 0.1);
+}
+
+/* ===== 🔘 버튼 스타일 ===== */
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 10px 30px rgba(139, 92, 246, 0.45),
+    0 0 50px rgba(139, 92, 246, 0.2);
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ===== 😊 이모지 버튼 (귀여운 스타일) ===== */
+
+.emoji-btn {
+  font-size: 2.5rem;
+  padding: 20px 28px;
+  border-radius: 28px;
+  background: var(--card);
+  border: 3px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+}
+
+.emoji-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 32px;
+  background: linear-gradient(135deg, var(--primary), var(--accent-pink), var(--accent));
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.emoji-btn:hover {
+  transform: scale(1.12) rotate(-3deg);
+  border-color: var(--primary);
+  box-shadow: 0 15px 40px rgba(139, 92, 246, 0.35);
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.emoji-btn:hover::before {
+  opacity: 0.4;
+}
+
+.emoji-btn:active {
+  transform: scale(0.95);
+}
+
+.emoji-btn.selected {
+  border-color: var(--accent);
+  background: rgba(251, 146, 60, 0.15);
+  box-shadow:
+    0 0 40px rgba(251, 146, 60, 0.4),
+    inset 0 0 30px rgba(251, 146, 60, 0.1);
+  animation: bounce-soft 0.8s ease-in-out infinite;
+}
+
+.emoji-btn.selected::after {
+  content: '✓';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--success), #10B981);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(52, 211, 153, 0.4);
+}
+
+/* ===== 💬 메시지 카드 (아기자기) ===== */
+
+.message-card {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card-hover) 100%);
+  border-radius: 24px;
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.message-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--accent-pink) 100%);
+  border-radius: 5px 0 0 5px;
+}
+
+.message-card::after {
+  content: '💭';
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  font-size: 20px;
+  opacity: 0.6;
+}
+
+.message-card:hover {
+  transform: translateX(8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== 🎨 파스텔 배경색 클래스 ===== */
+
+.pastel-pink {
+  background: linear-gradient(135deg, #FED7E2 0%, #FBCFE8 100%);
+  color: #9D174D;
+  border: 2px solid #F9A8D4;
+  box-shadow: 0 8px 25px rgba(244, 114, 182, 0.2);
+}
+
+.pastel-blue {
+  background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+  color: #1E40AF;
+  border: 2px solid #93C5FD;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.pastel-green {
+  background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+  color: #065F46;
+  border: 2px solid #6EE7B7;
+  box-shadow: 0 8px 25px rgba(52, 211, 153, 0.2);
+}
+
+.pastel-yellow {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  color: #92400E;
+  border: 2px solid #FCD34D;
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.2);
+}
+
+.pastel-purple {
+  background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+  color: #5B21B6;
+  border: 2px solid #C4B5FD;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+}
+
+.pastel-orange {
+  background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%);
+  color: #9A3412;
+  border: 2px solid #FDBA74;
+  box-shadow: 0 8px 25px rgba(251, 146, 60, 0.2);
+}
+
+/* ===== 🎈 플로팅 메시지 ===== */
+
+.floating-message {
+  position: absolute;
+  border-radius: 24px;
+  padding: 18px 22px;
+  max-width: 240px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.floating-message:hover {
+  transform: scale(1.1) rotate(0deg) !important;
+  z-index: 100;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== 📝 인풋 스타일 ===== */
+
+input, textarea {
+  font-family: inherit;
+}
+
+.input-cute,
+input[type="text"],
+textarea {
+  width: 100%;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  padding: 16px 20px;
+  color: var(--foreground);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.input-cute::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+
+.input-cute:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 4px rgba(139, 92, 246, 0.15),
+    0 8px 25px rgba(139, 92, 246, 0.15);
+}
+
+.input-cute:hover:not(:focus),
+input:hover:not(:focus),
+textarea:hover:not(:focus) {
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* ===== ⏱️ 타이머 스타일 ===== */
+
+.timer-circle {
+  filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.4));
+}
+
+.timer-text {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ===== ✨ 반짝이 효과 ===== */
+
+.sparkle-container {
+  position: relative;
+}
+
+.sparkle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: sparkle 2s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.sparkle:nth-child(1) { top: 10%; left: 20%; animation-delay: 0s; }
+.sparkle:nth-child(2) { top: 30%; right: 15%; animation-delay: 0.4s; }
+.sparkle:nth-child(3) { bottom: 20%; left: 30%; animation-delay: 0.8s; }
+.sparkle:nth-child(4) { bottom: 10%; right: 25%; animation-delay: 1.2s; }
+
+/* ===== 🏷️ 뱃지/태그 ===== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--primary-light);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.badge-success {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* ===== 📊 프로그레스 바 ===== */
+
+.progress-bar {
+  height: 14px;
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent-pink), var(--accent));
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s linear infinite;
+  background-size: 200% 100%;
+}
+
+/* ===== 🖱️ 선택 효과 ===== */
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: white;
+}
+
+/* ===== 🎯 포커스 링 ===== */
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* ===== 💫 유틸리티 ===== */
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-pink) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+  }
+
+  .glow-md {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.35);
+  }
+
+  .glow-lg {
+    box-shadow: 0 0 60px rgba(139, 92, 246, 0.45);
+  }
+
+  .shadow-cute {
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(139, 92, 246, 0.1);
   }
 }
