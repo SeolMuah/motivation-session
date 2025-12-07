@@ -334,7 +334,7 @@ export default function MyRecapPage() {
           className="mb-8"
         >
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            💌 팀원들에게
+            🤝 팀원들에게
             <span className="text-sm font-normal text-[var(--muted)]">
               ({teamNumber}조 기록 {filteredTeamMsg.length}개)
             </span>
