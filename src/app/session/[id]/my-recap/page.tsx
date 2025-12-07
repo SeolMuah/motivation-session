@@ -246,22 +246,21 @@ export default function MyRecapPage() {
               작성한 메시지가 없어요
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {filteredFirstMe.map((msg, index) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className="card border-l-4 border-l-[var(--primary)] bg-[var(--primary)]/5"
+                  className={`rounded-2xl p-5 ${
+                    ['pastel-pink', 'pastel-blue', 'pastel-purple'][index % 3]
+                  }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm font-medium text-[var(--primary)]">나</span>
-                    <span className="text-xs text-[var(--muted)]">
-                      {formatDate(msg.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-lg">{msg.message}</p>
+                  <p className="text-lg font-medium">{msg.message}</p>
+                  <p className="text-sm opacity-60 mt-3">
+                    {formatDate(msg.created_at)}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -288,30 +287,28 @@ export default function MyRecapPage() {
               우리 조의 메시지가 없어요
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {filteredTeamMsg.map((msg, index) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`card ${
-                    msg.nickname === myNicknameForTeamMsg
-                      ? 'border-l-4 border-l-emerald-400 bg-emerald-500/5'
-                      : ''
-                  }`}
+                  className={`rounded-2xl p-5 ${
+                    ['pastel-green', 'pastel-blue', 'pastel-yellow', 'pastel-purple'][index % 4]
+                  } ${msg.nickname === myNicknameForTeamMsg ? 'ring-2 ring-white/30' : ''}`}
                 >
-                  <div className="flex justify-between items-start mb-2">
+                  <p className="text-lg font-medium">{msg.message}</p>
+                  <div className="flex justify-between items-center mt-3">
                     <span className={`text-sm font-medium ${
-                      msg.nickname === myNicknameForTeamMsg ? 'text-emerald-400' : 'text-[var(--muted)]'
+                      msg.nickname === myNicknameForTeamMsg ? 'opacity-80' : 'opacity-60'
                     }`}>
-                      {msg.nickname === myNicknameForTeamMsg ? '나' : msg.nickname}
+                      {msg.nickname === myNicknameForTeamMsg ? '✨ 나' : msg.nickname}
                     </span>
-                    <span className="text-xs text-[var(--muted)]">
+                    <span className="text-sm opacity-60">
                       {formatDate(msg.created_at)}
                     </span>
                   </div>
-                  <p className="text-lg">{msg.message}</p>
                 </motion.div>
               ))}
             </div>
@@ -338,27 +335,28 @@ export default function MyRecapPage() {
               작성한 메시지가 없어요
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {filteredProud.map((msg, index) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className="card border-l-4 border-l-[var(--accent)] bg-[var(--accent)]/5"
+                  className={`rounded-2xl p-5 ${
+                    ['pastel-orange', 'pastel-pink', 'pastel-yellow', 'pastel-green', 'pastel-purple', 'pastel-blue'][index % 6]
+                  }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-sm font-medium text-[var(--accent)]">나</span>
-                    <span className="text-xs text-[var(--muted)]">
+                  <p className="text-lg font-medium">{msg.message}</p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-sm font-medium opacity-60">
                       {formatDate(msg.created_at)}
                     </span>
+                    {msg.hearts > 0 && (
+                      <span className="text-sm">
+                        ❤️ {msg.hearts}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-lg">{msg.message}</p>
-                  {msg.hearts > 0 && (
-                    <div className="mt-2 text-sm text-rose-400">
-                      ❤️ {msg.hearts}
-                    </div>
-                  )}
                 </motion.div>
               ))}
             </div>
