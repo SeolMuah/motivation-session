@@ -418,7 +418,7 @@ export default function MyRecapPage() {
         >
           <div className="card bg-gradient-to-r from-[var(--primary)]/10 to-[var(--accent)]/10">
             <p className="text-2xl md:text-4xl font-bold">
-              데이터 9기 최종 프로젝트 끝까지 화이팅! 💪
+              데이터 분석 9기 최종 프로젝트 끝까지 화이팅! 💪
             </p>
           </div>
 
