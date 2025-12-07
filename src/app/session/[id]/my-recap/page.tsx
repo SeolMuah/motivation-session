@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MessageCircle, Lightbulb, Trophy, Link2, Check, Users } from 'lucide-react';
+import { ArrowLeft, Link2, Check } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session, FirstMeMessage, ProudMoment, ProblemKeyword } from '@/lib/types';
 
@@ -140,8 +140,18 @@ export default function MyRecapPage() {
     return teamMessages.filter((msg) => msg.team_number === teamNumber);
   }, [teamMessages, teamNumber]);
 
-  // 고민 키워드는 전체 표시
+  // 고민 키워드는 전체 표시 (중복 키워드 그룹화)
   const totalKeywordCount = problemKeywords.length;
+  const groupedKeywords = useMemo(() => {
+    const keywordMap = new Map<string, number>();
+    problemKeywords.forEach((kw) => {
+      const keyword = kw.keyword.toLowerCase().trim();
+      keywordMap.set(keyword, (keywordMap.get(keyword) || 0) + 1);
+    });
+    return Array.from(keywordMap.entries())
+      .sort((a, b) => b[1] - a[1]) // 많은 순으로 정렬
+      .slice(0, 30);
+  }, [problemKeywords]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -234,8 +244,7 @@ export default function MyRecapPage() {
           className="mb-8"
         >
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <MessageCircle size={24} className="text-[var(--primary)]" />
-            처음의 나에게
+            💌 처음의 나에게
             <span className="text-sm font-normal text-[var(--muted)]">
               (내 기록 {filteredFirstMe.length}개)
             </span>
@@ -267,7 +276,7 @@ export default function MyRecapPage() {
           )}
         </motion.section>
 
-        {/* 협업 이야기 */}
+        {/* 팀원들에게 */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -275,8 +284,7 @@ export default function MyRecapPage() {
           className="mb-8"
         >
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Users size={24} className="text-emerald-400" />
-            협업 이야기
+            💌 팀원들에게
             <span className="text-sm font-normal text-[var(--muted)]">
               ({teamNumber}조 기록 {filteredTeamMsg.length}개)
             </span>
@@ -287,28 +295,21 @@ export default function MyRecapPage() {
               우리 조의 메시지가 없어요
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTeamMsg.map((msg, index) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`rounded-2xl p-5 ${
-                    ['pastel-green', 'pastel-blue', 'pastel-yellow', 'pastel-purple'][index % 4]
+                  className={`rounded-2xl p-4 ${
+                    ['pastel-pink', 'pastel-blue', 'pastel-green', 'pastel-yellow', 'pastel-purple', 'pastel-orange'][index % 6]
                   } ${msg.nickname === myNicknameForTeamMsg ? 'ring-2 ring-white/30' : ''}`}
                 >
-                  <p className="text-lg font-medium">{msg.message}</p>
-                  <div className="flex justify-between items-center mt-3">
-                    <span className={`text-sm font-medium ${
-                      msg.nickname === myNicknameForTeamMsg ? 'opacity-80' : 'opacity-60'
-                    }`}>
-                      {msg.nickname === myNicknameForTeamMsg ? '✨ 나' : msg.nickname}
-                    </span>
-                    <span className="text-sm opacity-60">
-                      {formatDate(msg.created_at)}
-                    </span>
-                  </div>
+                  <p className="font-medium">{msg.message}</p>
+                  <p className="text-sm opacity-70 mt-2">
+                    - {msg.nickname === myNicknameForTeamMsg ? '나 ✨' : msg.nickname}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -323,8 +324,7 @@ export default function MyRecapPage() {
           className="mb-8"
         >
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Trophy size={24} className="text-[var(--accent)]" />
-            뿌듯한 순간
+            🌟 뿌듯할 순간
             <span className="text-sm font-normal text-[var(--muted)]">
               (내 기록 {filteredProud.length}개)
             </span>
@@ -370,8 +370,7 @@ export default function MyRecapPage() {
           transition={{ delay: 0.5 }}
         >
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Lightbulb size={24} className="text-amber-400" />
-            우리들의 고민 키워드
+            🎯 우리들의 고민
             <span className="text-sm font-normal text-[var(--muted)]">
               (총 {totalKeywordCount}개)
             </span>
@@ -381,21 +380,26 @@ export default function MyRecapPage() {
             <p className="text-sm text-[var(--muted)] mb-4">
               키워드는 익명으로 수집되어 전체 키워드만 표시됩니다.
             </p>
-            <div className="flex flex-wrap gap-2">
-              {problemKeywords.slice(0, 30).map((kw, index) => (
+            <div className="flex flex-wrap gap-3">
+              {groupedKeywords.map(([keyword, count], index) => (
                 <motion.span
-                  key={kw.id}
+                  key={keyword}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.02 }}
-                  className="px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-sm"
+                  className="relative px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-sm"
                 >
-                  {kw.keyword}
+                  {keyword}
+                  {count > 1 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-xs font-bold rounded-full px-1">
+                      {count}
+                    </span>
+                  )}
                 </motion.span>
               ))}
-              {problemKeywords.length > 30 && (
+              {groupedKeywords.length >= 30 && (
                 <span className="px-3 py-1.5 rounded-full bg-[var(--card-hover)] text-[var(--muted)] text-sm">
-                  +{problemKeywords.length - 30}개 더
+                  +더 있음
                 </span>
               )}
             </div>
