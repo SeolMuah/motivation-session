@@ -8,16 +8,26 @@ import { getSupabase } from '@/lib/supabase/client';
 interface CheerButtonProps {
   sessionId: string;
   isDisplay?: boolean;
+  demoData?: number; // 데모 카운트
 }
 
 export default function CheerButton({
   sessionId,
   isDisplay = false,
+  demoData,
 }: CheerButtonProps) {
   const [cheerCount, setCheerCount] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const prevCountRef = useRef(0);
   const supabase = getSupabase();
+
+  // 데모 모드일 경우 demoData 사용
+  useEffect(() => {
+    if (demoData !== undefined) {
+      setCheerCount(demoData);
+      prevCountRef.current = demoData;
+    }
+  }, [demoData]);
 
   const fireConfetti = useCallback(() => {
     const colors = ['#6366F1', '#F59E0B', '#EC4899', '#10B981', '#F43F5E'];
@@ -62,6 +72,8 @@ export default function CheerButton({
   }, [supabase, sessionId, isDisplay, fireConfetti]);
 
   useEffect(() => {
+    if (demoData !== undefined) return; // 데모 모드면 실제 데이터 로드 스킵
+
     loadCheerCount();
 
     // Polling: 진행자 2초, 학생 3초
@@ -72,7 +84,7 @@ export default function CheerButton({
     return () => {
       clearInterval(pollInterval);
     };
-  }, [sessionId, isDisplay, loadCheerCount]);
+  }, [sessionId, isDisplay, loadCheerCount, demoData]);
 
   const handleCheer = async () => {
     if (isAnimating || isDisplay) return;

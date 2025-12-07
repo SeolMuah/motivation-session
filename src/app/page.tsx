@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Copy, ExternalLink, Sparkles, Lock, LogOut } from 'lucide-react';
+import { Plus, Copy, ExternalLink, Sparkles, Lock, LogOut, Trash2 } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session } from '@/lib/types';
 
@@ -12,6 +13,10 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // 삭제 관련 상태
+  const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 로그인 상태
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -101,6 +106,80 @@ export default function Home() {
     }
 
     setIsCreating(false);
+  };
+
+  // 세션 삭제 (관련 데이터 cascade 삭제)
+  const deleteSession = async () => {
+    if (!deleteTarget || isDeleting) return;
+
+    setIsDeleting(true);
+
+    try {
+      const sessionId = deleteTarget.id;
+
+      // 관련 데이터 순차적으로 삭제 (Foreign Key 제약 고려)
+      // 1. condition_votes 삭제
+      await supabase
+        .from('condition_votes')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 2. first_me_messages 삭제
+      await supabase
+        .from('first_me_messages')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 3. conflict_votes 삭제
+      await supabase
+        .from('conflict_votes')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 4. team_messages 삭제
+      await supabase
+        .from('team_messages')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 5. proud_moments 삭제
+      await supabase
+        .from('proud_moments')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 6. problem_keywords 삭제
+      await supabase
+        .from('problem_keywords')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 7. cheers 삭제
+      await supabase
+        .from('cheers')
+        .delete()
+        .eq('session_id', sessionId);
+
+      // 8. 마지막으로 session 삭제
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (!error) {
+        // 성공 시 로컬 상태에서 제거
+        setSessions(sessions.filter((s) => s.id !== sessionId));
+        setDeleteTarget(null);
+      } else {
+        console.error('세션 삭제 실패:', error);
+        alert('세션 삭제 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('세션 삭제 중 오류:', error);
+      alert('세션 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const copyUrl = (id: string, type: 'student' | 'display') => {
@@ -311,6 +390,16 @@ export default function Home() {
                       >
                         📊 회고
                       </a>
+
+                      {/* 삭제 버튼 */}
+                      <button
+                        onClick={() => setDeleteTarget(session)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors text-sm"
+                        title="세션 삭제"
+                      >
+                        <Trash2 size={16} />
+                        삭제
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -364,6 +453,19 @@ export default function Home() {
           </motion.div>
         </motion.div>
       )}
+
+      {/* 세션 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteSession}
+        title="세션을 삭제하시겠습니까?"
+        message={`"${deleteTarget?.name}" 세션과 관련된 모든 데이터(투표, 메시지, 키워드 등)가 영구적으로 삭제됩니다.\n\n이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제"
+        cancelText="취소"
+        isLoading={isDeleting}
+        variant="danger"
+      />
     </main>
   );
 }

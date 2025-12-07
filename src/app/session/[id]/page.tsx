@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, User, Users, ChevronDown } from 'lucide-react';
+import { Sparkles, User, Users, ChevronDown, BookOpen } from 'lucide-react';
+import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session, SessionStep } from '@/lib/types';
 
@@ -345,12 +346,12 @@ export default function SessionPage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-2xl md:text-3xl font-bold text-center"
                 >
-                  프로젝트 끝나고 가장 뿌듯할 순간은?
+                  최종 프로젝트가 끝나고 가장 뿌듯할 순간, 생각, 느낌을 자유롭게 적어주세요
                 </motion.h2>
                 <MessageInput
                   sessionId={sessionId}
                   table="proud_moments"
-                  placeholder="가장 뿌듯할 것 같은 순간을 적어주세요..."
+                  placeholder="뿌듯할 순간, 생각, 느낌을 자유롭게 적어주세요..."
                   maxLength={100}
                   nickname={userName}
                   teamNumber={teamNumber as number}
@@ -365,7 +366,27 @@ export default function SessionPage() {
             )}
 
             {currentStepData.id === 'cheer' && (
-              <CheerButton sessionId={sessionId} />
+              <div className="flex flex-col items-center gap-8">
+                <CheerButton sessionId={sessionId} />
+
+                {/* 나의 기록 돌아보기 버튼 */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1 }}
+                >
+                  <Link
+                    href={`/session/${sessionId}/my-recap`}
+                    className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-[var(--card)] border border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--card-hover)] transition-all group"
+                  >
+                    <BookOpen size={24} className="text-[var(--primary)] group-hover:scale-110 transition-transform" />
+                    <div className="text-left">
+                      <div className="font-semibold">나의 기록 돌아보기</div>
+                      <div className="text-sm text-[var(--muted)]">오늘 남긴 메시지들을 확인해보세요</div>
+                    </div>
+                  </Link>
+                </motion.div>
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -375,7 +396,7 @@ export default function SessionPage() {
       <div className="fixed bottom-0 left-0 right-0 p-4">
         <div className="container mx-auto flex justify-center items-center">
           <span className="text-[var(--muted)] bg-[var(--card)] px-4 py-2 rounded-xl">
-            {currentStep + 1} / {STEPS.length} 단계 · 진행자가 화면을 전환합니다
+            {currentStep + 1} / {STEPS.length} 단계
           </span>
         </div>
       </div>

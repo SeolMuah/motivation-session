@@ -27,9 +27,10 @@ function getVoterId(): string {
 interface EmojiVoteProps {
   sessionId: string;
   isDisplay?: boolean; // 진행자용 표시 모드
+  demoData?: VoteStats[]; // 데모 데이터
 }
 
-export default function EmojiVote({ sessionId, isDisplay = false }: EmojiVoteProps) {
+export default function EmojiVote({ sessionId, isDisplay = false, demoData }: EmojiVoteProps) {
   const [selected, setSelected] = useState<Emoji | null>(null);
   const [stats, setStats] = useState<VoteStats[]>([]);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -37,8 +38,19 @@ export default function EmojiVote({ sessionId, isDisplay = false }: EmojiVotePro
   const voterIdRef = useRef<string | null>(null);
   const supabase = getSupabase();
 
+  // 데모 모드일 경우 demoData 사용
+  useEffect(() => {
+    if (demoData) {
+      setStats(demoData);
+      setTotalVotes(demoData.reduce((sum, s) => sum + s.count, 0));
+      return;
+    }
+  }, [demoData]);
+
   // 초기 데이터 로드 및 Polling
   useEffect(() => {
+    if (demoData) return; // 데모 모드면 실제 데이터 로드 스킵
+
     // 클라이언트에서만 voter_id 생성
     if (!isDisplay) {
       voterIdRef.current = getVoterId();
@@ -56,9 +68,11 @@ export default function EmojiVote({ sessionId, isDisplay = false }: EmojiVotePro
       clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isDisplay]);
+  }, [sessionId, isDisplay, demoData]);
 
   const loadStats = async () => {
+    if (demoData) return;
+
     const { data } = await supabase
       .from('condition_votes')
       .select('emoji')

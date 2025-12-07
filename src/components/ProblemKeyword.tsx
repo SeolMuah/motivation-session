@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Lightbulb } from 'lucide-react';
+import { Send, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 
 interface ProblemKeywordProps {
   sessionId: string;
   isDisplay?: boolean;
+  demoData?: KeywordData[]; // 데모 데이터
 }
 
 interface KeywordData {
@@ -15,31 +16,75 @@ interface KeywordData {
   count: number;
 }
 
-export default function ProblemKeyword({ sessionId, isDisplay = false }: ProblemKeywordProps) {
+export default function ProblemKeyword({ sessionId, isDisplay = false, demoData }: ProblemKeywordProps) {
   const [keyword, setKeyword] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keywords, setKeywords] = useState<KeywordData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [showInsight, setShowInsight] = useState(false);
+  const [insightShownInDb, setInsightShownInDb] = useState(false);
   const supabase = getSupabase();
 
+  // 데모 모드일 경우 demoData 사용
   useEffect(() => {
+    if (demoData) {
+      setKeywords(demoData);
+      setTotalCount(demoData.reduce((sum, k) => sum + k.count, 0));
+      setShowInsight(true); // 데모에서는 항상 인사이트 표시
+    }
+  }, [demoData]);
+
+  useEffect(() => {
+    if (demoData) return; // 데모 모드면 실제 데이터 로드 스킵
+
     loadKeywords();
+    loadInsightState();
     checkIfSubmitted();
 
     // Polling: 진행자 2초, 학생 3초
     const pollInterval = setInterval(() => {
       loadKeywords();
+      loadInsightState();
     }, isDisplay ? 2000 : 3000);
 
     return () => {
       clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isDisplay]);
+  }, [sessionId, isDisplay, demoData]);
+
+  // DB에서 인사이트 상태 동기화
+  useEffect(() => {
+    if (demoData) return;
+
+    // 학생 페이지: DB 상태가 true가 되면 인사이트 표시
+    if (!isDisplay && insightShownInDb && hasSubmitted) {
+      setShowInsight(true);
+    }
+  }, [insightShownInDb, isDisplay, hasSubmitted, demoData]);
+
+  const loadInsightState = async () => {
+    if (demoData) return;
+
+    try {
+      const { data } = await supabase
+        .from('sessions')
+        .select('insight_shown')
+        .eq('id', sessionId)
+        .single();
+
+      if (data?.insight_shown !== undefined) {
+        setInsightShownInDb(data.insight_shown);
+      }
+    } catch {
+      // insight_shown 컬럼이 없으면 무시
+    }
+  };
 
   const loadKeywords = async () => {
+    if (demoData) return;
+
     const { data } = await supabase
       .from('problem_keywords')
       .select('keyword')
@@ -68,7 +113,30 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
     const submitted = localStorage.getItem(`submitted_keyword_${sessionId}`);
     if (submitted) {
       setHasSubmitted(true);
-      setTimeout(() => setShowInsight(true), 500);
+      // 학생은 진행자가 인사이트 버튼을 누를 때까지 기다림 (insightShownInDb로 동기화)
+    }
+  };
+
+  // 인사이트 토글 (진행자만 DB 업데이트, 학생은 로컬만)
+  const handleToggleInsight = async () => {
+    const newState = !showInsight;
+
+    if (isDisplay) {
+      // 진행자: DB에 상태 저장하여 학생과 동기화
+      const { error } = await supabase
+        .from('sessions')
+        .update({ insight_shown: newState })
+        .eq('id', sessionId);
+
+      if (!error) {
+        setShowInsight(newState);
+        setInsightShownInDb(newState);
+      }
+    } else {
+      // 학생: 로컬 상태만 토글 (진행자가 보여줬을 때만 가능)
+      if (insightShownInDb) {
+        setShowInsight(newState);
+      }
     }
   };
 
@@ -92,7 +160,7 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
       setHasSubmitted(true);
       localStorage.setItem(`submitted_keyword_${sessionId}`, 'true');
       setKeyword('');
-      setTimeout(() => setShowInsight(true), 500);
+      // 학생은 진행자가 인사이트 버튼을 누를 때까지 기다림
     } catch (error) {
       console.error('키워드 전송 실패:', error);
     } finally {
@@ -145,7 +213,7 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
           최종 프로젝트에서 발생한
         </h2>
         <p className="text-2xl md:text-3xl font-bold gradient-text">
-          나의 고민을 하나만 적어주세요
+          나의 고민을 하나의 키워드로 적어주세요
         </p>
         <p className="text-[var(--muted)] mt-4">
           예: 기술 활용, 역할 분담, 의견 충돌, 시간 부족,  방향성...
@@ -244,6 +312,21 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
             <p className="text-center text-[var(--muted)] mt-6">
               총 <span className="text-[var(--accent)] font-bold">{totalCount}</span>개의 키워드
             </p>
+
+            {/* 인사이트 펼치기/접기 버튼 - 진행자 또는 진행자가 공개한 경우 학생에게도 표시 */}
+            {(isDisplay || insightShownInDb) && (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleToggleInsight}
+                className="w-full mt-6 py-3 flex items-center justify-center gap-2 text-[var(--muted)] hover:text-white transition-colors border-t border-[var(--border)]"
+              >
+                <span className="text-xl">💡</span>
+                {showInsight ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+              </motion.button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -254,13 +337,13 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.3 }}
             className="mt-8 card text-center"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1 }}
+              transition={{ delay: 0.5 }}
             >
               <p className="text-xl md:text-2xl font-semibold mb-3">
                 우리들의 고민들은 문제가 아니라
@@ -268,7 +351,7 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
               <motion.p
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 1.4 }}
+                transition={{ delay: 0.9 }}
                 className="text-2xl md:text-3xl font-bold gradient-text mb-6"
               >
                 나의 서사를 쌓는 중요한 시간입니다
@@ -276,13 +359,12 @@ export default function ProblemKeyword({ sessionId, isDisplay = false }: Problem
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.8 }}
+                transition={{ delay: 1.3 }}
                 className="text-xl md:text-2xl font-bold text-white"
               >
                 이 경험이 &apos;왜 당신을 뽑아야 하나요?&apos;에 대한 근거이자 답입니다
               </motion.p>
             </motion.div>
-
           </motion.div>
         )}
       </AnimatePresence>

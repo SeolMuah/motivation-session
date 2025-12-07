@@ -5,13 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Users, ChevronDown } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 
-interface ConflictVoteProps {
-  sessionId: string;
-  isDisplay?: boolean;
-  nickname?: string;
-  teamNumber?: number;
-}
-
 interface TeamMessage {
   id: string;
   session_id: string;
@@ -19,6 +12,20 @@ interface TeamMessage {
   nickname: string;
   team_number?: number;
   created_at: string;
+}
+
+interface ConflictVoteDemoData {
+  yesCount: number;
+  noCount: number;
+  messages: TeamMessage[];
+}
+
+interface ConflictVoteProps {
+  sessionId: string;
+  isDisplay?: boolean;
+  nickname?: string;
+  teamNumber?: number;
+  demoData?: ConflictVoteDemoData; // 데모 데이터
 }
 
 const PASTEL_COLORS = [
@@ -32,18 +39,32 @@ const PASTEL_COLORS = [
 
 const DECORATIONS = ['✨', '💫', '🌟', '💕', '🎈', '🌸', '🍀', '⭐'];
 
-export default function ConflictVote({ sessionId, isDisplay = false, nickname = '', teamNumber }: ConflictVoteProps) {
+export default function ConflictVote({ sessionId, isDisplay = false, nickname = '', teamNumber, demoData }: ConflictVoteProps) {
   const [hasVoted, setHasVoted] = useState(false);
   const [yesCount, setYesCount] = useState(0);
   const [noCount, setNoCount] = useState(0);
-  const [showMessage, setShowMessage] = useState(isDisplay); // 진행자는 항상 메시지 섹션 표시
+  const [showMessage, setShowMessage] = useState(isDisplay || !!demoData); // 진행자는 항상 메시지 섹션 표시, 데모도 마찬가지
   const [teamMessage, setTeamMessage] = useState('');
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [messages, setMessages] = useState<TeamMessage[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<number | 'all'>('all');
+  // 학생은 우리 조가 기본, 진행자는 전체가 기본
+  const [selectedTeam, setSelectedTeam] = useState<number | 'all'>(
+    !isDisplay && teamNumber ? teamNumber : 'all'
+  );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const supabase = getSupabase();
+
+  // 데모 모드일 경우 demoData 사용
+  useEffect(() => {
+    if (demoData) {
+      setYesCount(demoData.yesCount);
+      setNoCount(demoData.noCount);
+      setMessages(demoData.messages);
+      setHasVoted(true); // 데모에서는 이미 투표한 상태로 표시
+      setShowMessage(true);
+    }
+  }, [demoData]);
 
   // 내 조의 메시지 개수
   const myTeamMessageCount = useMemo(() => {
@@ -90,6 +111,8 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
   const yesPercentage = totalVotes > 0 ? Math.round((yesCount / totalVotes) * 100) : 0;
 
   useEffect(() => {
+    if (demoData) return; // 데모 모드면 실제 데이터 로드 스킵
+
     loadStats();
     loadMessages();
     checkIfVoted();
@@ -105,9 +128,11 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
       clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isDisplay]);
+  }, [sessionId, isDisplay, demoData]);
 
   const loadStats = async () => {
+    if (demoData) return;
+
     const { data } = await supabase
       .from('conflict_votes')
       .select('has_conflict')
@@ -120,6 +145,8 @@ export default function ConflictVote({ sessionId, isDisplay = false, nickname = 
   };
 
   const loadMessages = async () => {
+    if (demoData) return;
+
     const { data } = await supabase
       .from('team_messages')
       .select('*')

@@ -23,6 +23,7 @@ interface FloatingMessagesProps {
   title?: string;
   isDisplay?: boolean;
   myTeamNumber?: number;
+  demoData?: Message[]; // 데모 데이터
 }
 
 type Message = FirstMeMessage | ProudMoment;
@@ -33,11 +34,19 @@ export default function FloatingMessages({
   title = '여러분의 메시지',
   isDisplay = false,
   myTeamNumber,
+  demoData,
 }: FloatingMessagesProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<number | 'all'>('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const supabase = getSupabase();
+
+  // 데모 모드일 경우 demoData 사용
+  useEffect(() => {
+    if (demoData) {
+      setMessages(demoData);
+    }
+  }, [demoData]);
 
   // 내 조의 메시지 개수
   const myTeamMessageCount = useMemo(() => {
@@ -77,6 +86,8 @@ export default function FloatingMessages({
 
   // Load messages function
   const loadMessages = useCallback(async () => {
+    if (demoData) return; // 데모 모드면 실제 데이터 로드 스킵
+
     try {
       const { data, error } = await supabase
         .from(table)
@@ -95,10 +106,12 @@ export default function FloatingMessages({
     } catch (err) {
       console.error('메시지 로드 중 오류:', err);
     }
-  }, [supabase, table, sessionId]);
+  }, [supabase, table, sessionId, demoData]);
 
   // Polling으로 데이터 로드
   useEffect(() => {
+    if (demoData) return; // 데모 모드면 폴링 스킵
+
     loadMessages();
 
     // Polling: 진행자 2초, 학생 3초
@@ -109,7 +122,7 @@ export default function FloatingMessages({
     return () => {
       clearInterval(pollInterval);
     };
-  }, [sessionId, table, isDisplay, loadMessages]);
+  }, [sessionId, table, isDisplay, loadMessages, demoData]);
 
   // Styling helpers with stable values
   const getRotation = (index: number) => ((index * 7) % 10) - 5;

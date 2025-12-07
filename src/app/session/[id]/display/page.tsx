@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Maximize2, Lock, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, Lock } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session, SessionStep } from '@/lib/types';
 
@@ -16,13 +16,13 @@ import ProblemKeyword from '@/components/ProblemKeyword';
 import CheerButton from '@/components/CheerButton';
 
 const STEPS: { id: SessionStep; title: string; quote?: string }[] = [
-  { id: 'condition', title: '컨디션 체크', quote: '지금 여러분은 이미 상위 10%입니다' },
+  { id: 'condition', title: '컨디션 체크', quote: '포기하지 않고 최종 프로젝트 중간 발표까지 오신 지금\n여러분은 이미 상위 10%입니다' },
   { id: 'reset', title: '리셋 타임', quote: '잠시 눈을 감고, 처음 이 여정을 시작했을 때를 떠올려보세요...' },
   { id: 'first-me', title: '처음의 나에게', quote: '그때의 나한테 부끄럽지 않으려면?' },
-  { id: 'conflict', title: '협업 이야기', quote: '완벽한 팀은 없습니다. 함께 완주하는 팀이 있을 뿐\n서로 다르게 생각하는 그 시선에서 발전이 시작됩니다' },
+  { id: 'conflict', title: '협업 이야기', quote: '완벽한 팀은 없습니다. 함께 완주하는 팀이 있을 뿐\n서로 다르게 생각하는 그 시선에서 새로운 가능성이 시작됩니다' },
   { id: 'why', title: '나의 고민, 나의 서사', quote: '나의 고민, 나의 서사' },
   { id: 'proud', title: '뿌듯할 순간', quote: '과정을 견딘 사람만이, 결과의 열매를 맺습니다' },
-  { id: 'cheer', title: '화이팅!', quote: '힘든 것은 당연합니다. 쉽다면 그것이 진정 가치가 있을까요?\n그래서 여러분의 최종프로젝트가 가치가 있습니다!' },
+  { id: 'cheer', title: '화이팅!', quote: '힘든 것은 당연합니다. 쉽다면 그것이 진정 가치가 있을까요?\n그래서 여러분의 프로젝트가 가치가 있습니다!' },
 ];
 
 export default function DisplayPage() {
@@ -34,7 +34,6 @@ export default function DisplayPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isInsightExpanded, setIsInsightExpanded] = useState(false);
   const supabase = getSupabase();
 
   // 관리자 토큰 검증
@@ -257,75 +256,7 @@ export default function DisplayPage() {
               )}
 
               {currentStepData.id === 'why' && (
-                <div className="w-full">
-                  <ProblemKeyword sessionId={sessionId} isDisplay />
-
-                  {/* 하단 인사이트 메시지 - 접기/펼치기 */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-8 w-full max-w-2xl mx-auto"
-                  >
-                    {/* 펼치기 버튼 - 아이콘만 */}
-                    <motion.button
-                      onClick={() => setIsInsightExpanded(!isInsightExpanded)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-full card flex items-center justify-center py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors"
-                    >
-                      <motion.div
-                        animate={{ rotate: isInsightExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex items-center gap-2"
-                      >
-                        <span className="text-2xl">💡</span>
-                        <ChevronDown size={24} className="text-[var(--muted)]" />
-                      </motion.div>
-                    </motion.button>
-
-                    {/* 펼쳐지는 인사이트 내용 */}
-                    <AnimatePresence>
-                      {isInsightExpanded && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="card text-center mt-4">
-                            <motion.div
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.1 }}
-                            >
-                              <p className="text-xl md:text-2xl font-semibold mb-3">
-                                우리들의 고민들은 문제가 아니라
-                              </p>
-                              <motion.p
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.3 }}
-                                className="text-2xl md:text-3xl font-bold gradient-text mb-6"
-                              >
-                                나의 서사를 쌓는 중요한 시간입니다
-                              </motion.p>
-                              <motion.p
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5 }}
-                                className="text-xl md:text-2xl font-bold text-white"
-                              >
-                                이 경험이 &apos;왜 당신을 뽑아야 하나요?&apos;에 대한 근거이자 답입니다
-                              </motion.p>
-                            </motion.div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                </div>
+                <ProblemKeyword sessionId={sessionId} isDisplay />
               )}
 
               {currentStepData.id === 'proud' && (
@@ -367,10 +298,6 @@ export default function DisplayPage() {
         </button>
       </div>
 
-      {/* 키보드 단축키 안내 */}
-      <div className="fixed bottom-4 right-4 text-xs text-[var(--muted)]">
-        ← → 이동 | F 전체화면
-      </div>
     </main>
   );
 }

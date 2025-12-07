@@ -8,6 +8,7 @@ export interface Session {
   created_at: string;
   is_active: boolean;
   timer_started_at?: string | null;
+  insight_shown?: boolean;
 }
 
 export interface ConditionVote {

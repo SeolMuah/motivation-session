@@ -70,27 +70,9 @@ export default function Timer({
     };
   }, [userInteracted]);
 
-  // 타이머 상태 동기화
+  // 타이머 상태 동기화 (Polling only)
   useEffect(() => {
     loadTimerState();
-
-    // 실시간 구독
-    const channel = supabase
-      .channel(`timer_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'sessions',
-          filter: `id=eq.${sessionId}`,
-        },
-        (payload: { new: { timer_started_at: string | null } }) => {
-          const newTimerStartedAt = payload.new.timer_started_at;
-          setTimerStartedAt(newTimerStartedAt);
-        }
-      )
-      .subscribe();
 
     // Polling으로 타이머 상태 확인 (1초마다)
     const pollInterval = setInterval(() => {
@@ -98,7 +80,6 @@ export default function Timer({
     }, 1000);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,13 +190,38 @@ export default function Timer({
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
     if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      // 음소거 해제 시 재생 시도
-      if (isMuted && isRunning && userInteracted) {
-        audioRef.current.play().catch(() => {});
+      if (!isMuted) {
+        // 음소거 시 페이드 아웃 효과
+        const fadeOutDuration = 800; // 0.8초
+        const fadeOutSteps = 20;
+        const stepDuration = fadeOutDuration / fadeOutSteps;
+        const volumeStep = audioRef.current.volume / fadeOutSteps;
+        let currentStep = 0;
+
+        const fadeInterval = setInterval(() => {
+          currentStep++;
+          if (audioRef.current && currentStep < fadeOutSteps) {
+            audioRef.current.volume = Math.max(0, audioRef.current.volume - volumeStep);
+          } else {
+            clearInterval(fadeInterval);
+            if (audioRef.current) {
+              audioRef.current.muted = true;
+              audioRef.current.volume = 0.25; // 볼륨 복구 (음소거 상태)
+            }
+            setIsMuted(true);
+          }
+        }, stepDuration);
+      } else {
+        // 음소거 해제 시 즉시 재생
+        audioRef.current.muted = false;
+        setIsMuted(false);
+        if (isRunning && userInteracted) {
+          audioRef.current.play().catch(() => {});
+        }
       }
+    } else {
+      setIsMuted(!isMuted);
     }
   };
 
