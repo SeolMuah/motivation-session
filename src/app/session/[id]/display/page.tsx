@@ -18,7 +18,7 @@ import CheerButton from '@/components/CheerButton';
 const STEPS: { id: SessionStep; title: string; quote?: string }[] = [
   { id: 'condition', title: '컨디션 체크', quote: '포기하지 않고 최종 프로젝트 중간 발표까지 오신 지금\n여러분은 이미 상위 10%입니다' },
   { id: 'reset', title: '리셋 타임', quote: '잠시 눈을 감고, 처음 이 여정을 시작했을 때를 떠올려보세요...' },
-  { id: 'first-me', title: '처음의 나에게', quote: '그때의 나한테 부끄럽지 않으려면?' },
+  { id: 'first-me', title: '처음의 나에게', quote: '스파르타 내일배움캠프를 시작하기 전의 나에게' },
   { id: 'conflict', title: '협업 이야기', quote: '완벽한 팀은 없습니다. 함께 완주하는 팀이 있을 뿐\n서로 다르게 생각하는 그 시선에서 새로운 가능성이 시작됩니다' },
   { id: 'why', title: '나의 고민, 나의 서사', quote: '나의 고민, 나의 서사' },
   { id: 'proud', title: '뿌듯할 순간', quote: '과정을 견딘 사람만이, 결과의 열매를 맺습니다' },
