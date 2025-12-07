@@ -279,11 +279,51 @@ export default function MyRecapPage() {
           )}
         </motion.section>
 
-        {/* 뿌듯할 순간 */}
+        {/* 팀원들에게 */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          className="mb-8"
+        >
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            🤝 팀원들에게
+            <span className="text-sm font-normal text-[var(--muted)]">
+              ({teamNumber}조 기록 {filteredTeamMsg.length}개)
+            </span>
+          </h2>
+
+          {filteredTeamMsg.length === 0 ? (
+            <div className="card text-center py-8 text-[var(--muted)]">
+              우리 조의 메시지가 없어요
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTeamMsg.map((msg, index) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`rounded-2xl p-4 ${
+                    ['pastel-pink', 'pastel-blue', 'pastel-green', 'pastel-yellow', 'pastel-purple', 'pastel-orange'][index % 6]
+                  } ${msg.nickname === myNicknameForTeamMsg ? 'ring-2 ring-white/30' : ''}`}
+                >
+                  <p className="font-medium">{msg.message}</p>
+                  <p className="text-sm opacity-70 mt-2">
+                    - {msg.nickname === myNicknameForTeamMsg ? '나 ✨' : msg.nickname}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.section>
+
+        {/* 뿌듯할 순간 */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
           className="mb-8"
         >
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -320,46 +360,6 @@ export default function MyRecapPage() {
                       </span>
                     )}
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        {/* 팀원들에게 */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-8"
-        >
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            🤝 팀원들에게
-            <span className="text-sm font-normal text-[var(--muted)]">
-              ({teamNumber}조 기록 {filteredTeamMsg.length}개)
-            </span>
-          </h2>
-
-          {filteredTeamMsg.length === 0 ? (
-            <div className="card text-center py-8 text-[var(--muted)]">
-              우리 조의 메시지가 없어요
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTeamMsg.map((msg, index) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`rounded-2xl p-4 ${
-                    ['pastel-pink', 'pastel-blue', 'pastel-green', 'pastel-yellow', 'pastel-purple', 'pastel-orange'][index % 6]
-                  } ${msg.nickname === myNicknameForTeamMsg ? 'ring-2 ring-white/30' : ''}`}
-                >
-                  <p className="font-medium">{msg.message}</p>
-                  <p className="text-sm opacity-70 mt-2">
-                    - {msg.nickname === myNicknameForTeamMsg ? '나 ✨' : msg.nickname}
-                  </p>
                 </motion.div>
               ))}
             </div>
