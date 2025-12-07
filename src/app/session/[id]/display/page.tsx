@@ -22,7 +22,7 @@ const STEPS: { id: SessionStep; title: string; quote?: string }[] = [
   { id: 'conflict', title: '협업 이야기', quote: '완벽한 팀은 없습니다. 함께 완주하는 팀이 있을 뿐\n서로 다르게 생각하는 그 시선에서 새로운 가능성이 시작됩니다' },
   { id: 'why', title: '나의 고민, 나의 서사', quote: '나의 고민, 나의 서사' },
   { id: 'proud', title: '뿌듯할 순간', quote: '과정을 견딘 사람만이, 결과의 열매를 맺습니다' },
-  { id: 'cheer', title: '화이팅!', quote: '힘든 것은 당연합니다. 쉽다면 그것이 진정 가치가 있을까요?\n그래서 여러분의 프로젝트가 가치가 있습니다!' },
+  { id: 'cheer', title: '화이팅!', quote: '데이터가 쌓일수록 의미가 발견되었지요? 여러분의 시간도 마찬가지예요\n지금은 막막하고 두렵다고 느낄지라도 여러분들의 노력은 반드시 꽃을 피웁니다.' },
 ];
 
 export default function DisplayPage() {
