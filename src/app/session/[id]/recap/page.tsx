@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, MessageSquare, Heart, Sparkles, Hash } from 'lucide-react';
+import { ArrowLeft, Users, MessageSquare, Heart, Sparkles, Hash, Download } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Session, ConditionVote, FirstMeMessage, ConflictVote, ProudMoment, ProblemKeyword, TeamMessage } from '@/lib/types';
 
@@ -103,6 +103,123 @@ export default function RecapPage() {
     });
   };
 
+  // MD 파일 생성
+  const generateMarkdown = () => {
+    if (!session) return '';
+
+    const emojiLabels: Record<string, string> = {
+      '😴': '피곤해요',
+      '😵': '힘들어요',
+      '🔥': '열정 가득',
+      '💪': '최상의 컨디션',
+    };
+
+    const emojiStats = ['😴', '😵', '🔥', '💪'].map((emoji) => ({
+      emoji,
+      label: emojiLabels[emoji],
+      count: conditionVotes.filter((v) => v.emoji === emoji).length,
+    }));
+
+    const conflictYesCount = conflictVotes.filter((v) => v.has_conflict).length;
+    const conflictPercent = conflictVotes.length > 0
+      ? Math.round((conflictYesCount / conflictVotes.length) * 100)
+      : 0;
+
+    // 팀별로 메시지 그룹화
+    const teamMessagesByTeam = teamMessages.reduce((acc, msg) => {
+      const team = msg.team_number || 0;
+      if (!acc[team]) acc[team] = [];
+      acc[team].push(msg);
+      return acc;
+    }, {} as Record<number, typeof teamMessages>);
+
+    const md = `# ${session.name} 회고록
+
+📅 생성일: ${formatDate(session.created_at)}
+📥 다운로드: ${formatDate(new Date().toISOString())}
+
+---
+
+## 📊 통계 요약
+
+| 항목 | 수치 |
+|------|------|
+| 참여자 | ${conditionVotes.length}명 |
+| 메시지 | ${firstMeMessages.length + proudMoments.length}개 |
+| 키워드 | ${problemKeywords.length}개 |
+| 화이팅 | ${cheerCount}회 |
+| 갈등 경험 | ${conflictPercent}% |
+
+---
+
+## 😊 컨디션 분포
+
+| 이모지 | 상태 | 인원 | 비율 |
+|--------|------|------|------|
+${emojiStats.map((stat) => `| ${stat.emoji} | ${stat.label} | ${stat.count}명 | ${conditionVotes.length > 0 ? Math.round((stat.count / conditionVotes.length) * 100) : 0}% |`).join('\n')}
+
+---
+
+## 🎯 우리들의 고민 (${problemKeywords.length}개)
+
+${problemKeywords.length > 0 ? problemKeywords.map((k) => `- #${k.keyword}`).join('\n') : '_작성된 키워드가 없습니다._'}
+
+---
+
+## 💌 처음의 나에게 (${firstMeMessages.length}개)
+
+${firstMeMessages.length > 0 ? firstMeMessages.map((msg) => `> "${msg.message}"
+> — ${msg.nickname}
+`).join('\n') : '_작성된 메시지가 없습니다._'}
+
+---
+
+## 🌟 뿌듯할 순간 (${proudMoments.length}개)
+
+${proudMoments.length > 0 ? proudMoments.map((msg) => `- **${msg.nickname}**: ${msg.message}${msg.hearts > 0 ? ` ❤️ ${msg.hearts}` : ''}`).join('\n') : '_작성된 메시지가 없습니다._'}
+
+---
+
+## 🤝 팀원들에게 (${teamMessages.length}개)
+
+${Object.keys(teamMessagesByTeam).length > 0
+  ? Object.entries(teamMessagesByTeam)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([team, msgs]) => `### ${team}조
+
+${msgs.map((msg) => `- **${msg.nickname}**: ${msg.message}`).join('\n')}
+`).join('\n')
+  : '_작성된 메시지가 없습니다._'}
+
+---
+
+## 🎉 마무리
+
+총 **${conditionVotes.length}명**의 참여자가 함께한 동기부여 세션이었습니다.
+
+**모두 수고하셨습니다! 💪**
+
+---
+_이 문서는 동기부여 세션 앱에서 자동 생성되었습니다._
+`;
+
+    return md;
+  };
+
+  // MD 파일 다운로드
+  const downloadMarkdown = () => {
+    const md = generateMarkdown();
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${session?.name || 'recap'}_회고록.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center gradient-bg">
@@ -140,17 +257,28 @@ export default function RecapPage() {
     <main className="min-h-screen gradient-bg">
       <div className="container mx-auto px-4 py-8">
         {/* 헤더 */}
-        <div className="flex items-center gap-4 mb-8">
-          <a
-            href="/"
-            className="p-2 rounded-full bg-[var(--card)] hover:bg-[var(--card-hover)] transition-colors"
-          >
-            <ArrowLeft size={24} />
-          </a>
-          <div>
-            <h1 className="text-3xl font-bold">{session.name}</h1>
-            <p className="text-[var(--muted)]">{formatDate(session.created_at)}</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <a
+              href="/"
+              className="p-2 rounded-full bg-[var(--card)] hover:bg-[var(--card-hover)] transition-colors"
+            >
+              <ArrowLeft size={24} />
+            </a>
+            <div>
+              <h1 className="text-3xl font-bold">{session.name}</h1>
+              <p className="text-[var(--muted)]">{formatDate(session.created_at)}</p>
+            </div>
           </div>
+          <motion.button
+            onClick={downloadMarkdown}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors"
+          >
+            <Download size={20} />
+            <span className="hidden sm:inline">MD 다운로드</span>
+          </motion.button>
         </div>
 
         {/* 통계 요약 */}
